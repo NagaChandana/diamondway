@@ -1,0 +1,37 @@
+{
+	"Identification": {
+		"FirstName": "Bob",
+		"LastName": "Frederick",
+		"DOB": "06/21/1980",
+		"Gender": "M",
+		"Title": "Manager"
+	},
+	"Address": [{
+		"type ": "home",
+		"number": 2345,
+		"street": "sehbsh dsda St",
+		"Unit": "788a",
+		"City": "anywhere",
+		"State": "RT",
+		"zipcode": "45678"
+	}, {
+		"type ": "office",
+		"number": 645353,
+		"street": "dgvfsxv dsda St",
+		"Unit": "765463d",
+		"City": "smwhr",
+		"State": "DE",
+		"zipcode": "23452"
+	}],
+	"Communication": [{
+			"type": "email",
+			"value": "gdht@sample.com",
+			"preferred": "true"
+		},
+		{
+
+			"type": "mobile",
+			"value": "878-365-7654"
+		}
+	]
+}

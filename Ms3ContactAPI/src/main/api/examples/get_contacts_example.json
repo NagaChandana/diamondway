@@ -1,0 +1,77 @@
+[{
+		"Identification": {
+			"identificationId": 1,
+			"FirstName": "Bob",
+			"LastName": "Frederick",
+			"DOB": "06/21/1980",
+			"Gender": "M",
+			"Title": "Manager"
+		},
+		"Address": [{
+			"addressId": 1,
+			"type ": "home",
+			"number": 1234,
+			"street": "blah blah St",
+			"Unit": "1 a",
+			"City": "Somewhere",
+			"State": "WV",
+			"zipcode": "12345"
+		}],
+		"Communication": [{
+				"communicationId": 1,
+				"type": "email",
+				"value": "bfe@sample.com",
+				"preferred": "true"
+			},
+			{
+				"communicationId": 2,
+				"type": "cell",
+				"value": "304-555-8282"
+			}
+		]
+	},
+	{
+		"Identification": {
+			"identificationId": 2,
+			"FirstName": "James",
+			"LastName": "Bond",
+			"DOB": "08/22/1980",
+			"Gender": "M",
+			"Title": "Developer"
+		},
+		"Address": [{
+				"addressId": 2,
+				"type ": "home",
+				"number": 8765,
+				"street": "costa St",
+				"Unit": "876 a",
+				"City": "sandiego",
+				"State": "ca",
+				"zipcode": "43221"
+			},
+
+			{
+				"addressId": 3,
+				"type ": "office",
+				"number": 3452,
+				"street": "code Avenue",
+				"Unit": "786 a",
+				"City": "San Jose",
+				"State": "CA",
+				"zipcode": "24325"
+			}
+		],
+		"Communication": [{
+				"communicationId": 3,
+				"type": "email",
+				"value": "gesfe@sample.com",
+				"preferred": "false"
+			},
+			{
+				"communicationId": 4,
+				"type": "cell",
+				"value": "344-467-4545"
+			}
+		]
+	}
+]

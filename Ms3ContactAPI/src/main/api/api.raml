@@ -1,0 +1,106 @@
+#%RAML 0.8
+title: ContactAPI
+version: 1.0
+baseUri: http://ms3dev-american-webservice-contactapi.cloudhub.io/api
+schemas:
+  - Contact: !include CustomerInfo-API.schema
+   
+     
+/contacts:
+    displayName: Contacts
+    description: |
+         Working with contacts:
+         * Retrieving all contacts
+         * Creating contacts
+    get:
+      description: |
+         Retrieve all the contacts.
+      responses:
+        200:
+          body:
+            application/json:
+             example: !include examples/get_contacts_example.json
+    post:
+      description: |
+        Create a new Contact
+      body:
+        application/json:
+          example: !include examples/post_contact_example.json
+      responses:
+        201:
+           description: Created
+           body:
+             application/json:
+              example: |
+                 {
+                   "message":"Contact created"
+                 }
+        400:
+          body:
+            application/json:
+              example: |
+                {
+                  "message": "Failed to create new Contact"
+                }             
+/{identificationId}:
+    displayName: ContactID
+    description: |
+      Working with Contacts:
+      * Retrieving specific contact
+      * Updating specific contact
+      * Deleting specific contact
+    uriParameters:
+      identificationId:
+        type: integer
+        description: Represents the contact ID of native system
+    get:
+      description: Get contact by ID
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include examples/get_contactById_example.json
+        404:
+          body:
+            application/json:
+              example: |
+                {
+                  "message": "Resource not found"
+                }
+    put:
+      description: Update contact specified by ID
+      body:
+        application/json:
+          example: !include examples/put_contact_example.json
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  "status": "OK"
+                }
+        404:
+          body:
+            application/json:
+              example: |
+                {
+                  "message": "Resource not found"
+                }
+    delete:
+      description: Delete Contact specified by ID
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  "status": "OK"
+                }
+        404:
+          body:
+            application/json:
+              example: |
+                {
+                  "message": "Resource not found"
+                }

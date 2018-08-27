@@ -1,0 +1,33 @@
+{
+	"Identification": {
+  	"identificationId":1,
+		"FirstName": "Bob",
+		"LastName": "Frederick",
+		"DOB": "06/21/1980",
+		"Gender": "M",
+		"Title": "Manager"
+	},
+	"Address": [{
+	  "addressId":"1",
+		"type ": "home",
+		"number": 1234,
+		"street": "blah blah St",
+		"Unit": "1 a",
+		"City": "Somewhere",
+		"State": "WV",
+		"zipcode": "12345"
+	}],
+	"Communication": [{
+	        "communicationId":1,
+			"type": "email",
+			"value": "bfe@sample.com",
+	  		"preferred" : "true"
+		},
+		{
+		  "communicationId":2,
+			"type": "cell",
+			"value": "304-555-8282"
+		}
+	]
+}
+

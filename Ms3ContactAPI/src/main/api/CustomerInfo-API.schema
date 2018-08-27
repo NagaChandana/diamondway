@@ -1,0 +1,175 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"title": "The Root Schema",
+	"required": [
+		"Identification",
+		"Address",
+		"Communication"
+	],
+	"properties": {
+		"Identification": {
+			"type": "object",
+			"title": "The Identification Schema",
+			"required": [
+				"FirstName",
+				"LastName",
+				"DOB",
+				"Gender",
+				"Title"
+			],
+			"properties": {
+				"FirstName": {
+					"type": "string",
+					"default": "",
+					"examples": [
+						"Bob"
+					],
+					"pattern": "^(.*)$"
+				},
+				"LastName": {
+					"type": "string",
+					"default": "",
+					"examples": [
+						"Frederick"
+					],
+					"pattern": "^(.*)$"
+				},
+				"DOB": {
+					"type": "string",
+					"default": "",
+					"examples": [
+						"06/21/1980"
+					],
+					"pattern": "^(.*)$"
+				},
+				"Gender": {
+					"type": "string",
+					"default": "",
+					"examples": [
+						"M"
+					],
+					"pattern": "^(.*)$"
+				},
+				"Title": {
+					"type": "string",
+					"default": "",
+					"examples": [
+						"Manager"
+					],
+					"pattern": "^(.*)$"
+				}
+			}
+		},
+		"Address": {
+			"type": "array",
+			"title": "The Address Schema",
+			"items": {
+				"type": "object",
+				"required": [
+					"type ",
+					"number",
+					"street",
+					"Unit",
+					"City",
+					"State",
+					"zipcode"
+				],
+				"properties": {
+					"type ": {
+						"type": "string",
+						"default": "",
+						"examples": [
+							"home"
+						],
+						"pattern": "^(.*)$"
+					},
+					"number": {
+						"type": "integer",
+						"default": 0,
+						"examples": [
+							1234
+						]
+					},
+					"street": {
+						"type": "string",
+						"default": "",
+						"examples": [
+							"blah blah St"
+						],
+						"pattern": "^(.*)$"
+					},
+					"Unit": {
+						"type": "string",
+						"default": "",
+						"examples": [
+							"1 a"
+						],
+						"pattern": "^(.*)$"
+					},
+					"City": {
+						"type": "string",
+						"default": "",
+						"examples": [
+							"Somewhere"
+						],
+						"pattern": "^(.*)$"
+					},
+					"State": {
+						"type": "string",
+						"default": "",
+						"examples": [
+							"WV"
+						],
+						"pattern": "^(.*)$"
+					},
+					"zipcode": {
+						"type": "string",
+						"default": "",
+						"examples": [
+							"12345"
+						],
+						"pattern": "^(.*)$"
+					}
+				}
+			}
+		},
+		"Communication": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": [
+					"type",
+					"value",
+					"preferred"
+				],
+				"properties": {
+					"type": {
+						"type": "string",
+						"default": "",
+						"examples": [
+							"email"
+						],
+						"pattern": "^(.*)$"
+					},
+					"value": {
+						"type": "string",
+						"default": "",
+						"examples": [
+							"bfe@sample.com"
+						],
+						"pattern": "^(.*)$"
+					},
+					"preferred": {
+						"type": "string",
+						"default": "",
+						"examples": [
+							"true"
+						],
+						"pattern": "^(.*)$"
+					}
+				}
+			}
+		}
+	}
+}

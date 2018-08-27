@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    
+    <context:property-placeholder location="dev.properties, ${mule.env}.properties" />
+    
+    <http:listener-config name="api-httpListenerConfig" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <apikit:config name="api-config" raml="api.raml" consoleEnabled="false" doc:name="Router"/>
+    <db:mysql-config name="MySQL_Configuration" host="${db.host}" port="${db.port}" user="${db.user}" password="${db.password}" database="${db.dbname}" doc:name="MySQL Configuration"/>
+    <flow name="api-main">
+        <http:listener config-ref="api-httpListenerConfig" path="/api/*" doc:name="HTTP"/>
+        <apikit:router config-ref="api-config" doc:name="APIkit Router"/>
+        <exception-strategy ref="api-apiKitGlobalExceptionMapping" doc:name="Reference Exception Strategy"/>
+    </flow>
+    <flow name="api-console">
+        <http:listener config-ref="api-httpListenerConfig" path="/console/*" doc:name="HTTP"/>
+        <apikit:console config-ref="api-config" doc:name="APIkit Console"/>
+    </flow>
+    
+    <flow name="get:/{identificationId}:api-config">
+        <db:select config-ref="MySQL_Configuration" doc:name="Database">
+            <db:parameterized-query><![CDATA[Select distinct a.identificationId,a.FirstName,a.LastName,a.DOB,a.Gender,a.Title,b.addressId,b.type as Atype,b.number,b.street,b.Unit,b.City,b.State,b.zipcode,c.communicationId,c.type,c.value,c.preferred from identification a
+  join address b on a.identificationId= b.identificationId 
+  join communication c on a.identificationId= c.communicationId where a.identificationId = #[message.inboundProperties["http.uri.params"].identificationId]]]></db:parameterized-query>
+
+
+        </db:select>
+
+         <choice doc:name="Does the contact exist?">
+            <when expression="#[payload != empty]">
+                <dw:transform-message doc:name="DB Contact_to API Contact">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload default [] groupBy ($.identificationId) map ((data, index) -> {
+	Identification : {
+		"FirstName" : data[0].FirstName,
+		"LastName": data[0].LastName,
+      	"DOB": data[0].DOB,
+      	"Gender": data[0].Gender,
+      	"Title": data[0].Title
+	},
+	"Address": data map {
+      "type": $.type,
+      "number": $.number,
+      "street": $.street,
+      "Unit": $.Unit,
+      "City": $.City,
+      "State": $.State,
+      "zipcode": $.zipcode
+    },
+    "Communication": data map {
+      "type": $.type,
+      "value": $.value,
+      "preferred": $.preferred
+    }
+})]]></dw:set-payload>
+                </dw:transform-message>
+
+            </when>
+            <otherwise>
+                <set-property propertyName="http.status" value="#[404]" doc:name="Resource Not Found"/>
+                <set-payload value="{ &quot;message&quot;: &quot;Resource not found&quot; }" doc:name="Contact not found"/>
+            </otherwise>
+        </choice>
+
+    </flow>
+    <flow name="get:/contacts:api-config">
+        <db:select config-ref="MySQL_Configuration" doc:name="Database">
+            <db:parameterized-query><![CDATA[Select a.identificationId,a.FirstName,a.LastName,a.DOB,a.Gender,a.Title,b.addressId,b.type as Atype,b.number,b.street,b.Unit,b.City,b.State,b.zipcode,c.communicationId,c.type,c.value,c.preferred from identification a
+	  join address b on a.identificationId= b.identificationId 
+	  join communication c on a.identificationId= c.communicationId;]]></db:parameterized-query>
+        </db:select>
+
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload default [] groupBy ($.identificationId) map ((data, index) -> {
+	Identification : {
+		"FirstName" : data[0].FirstName,
+		"LastName": data[0].LastName,
+      	"DOB": data[0].DOB,
+      	"Gender": data[0].Gender,
+      	"Title": data[0].Title
+	},
+	"Address": data map {
+      "type": $.type,
+      "number": $.number,
+      "street": $.street,
+      "Unit": $.Unit,
+      "City": $.City,
+      "State": $.State,
+      "zipcode": $.zipcode
+    },
+    "Communication": data map {
+      "type": $.type,
+      "value": $.value,
+      "preferred": $.preferred
+    }
+})]]></dw:set-payload>
+        </dw:transform-message>
+        <json:object-to-json-transformer doc:name="Object to JSON"/>
+
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+
+    </flow>
+    <flow name="post:/contacts:api-config">
+        <set-property propertyName="Content-Type" value="application/json" doc:name="SetContentType"/>
+        <json:json-to-object-transformer doc:name="JSON to Object"/>
+        <set-session-variable variableName="input" value="#[payload]" doc:name="Session Variable"/>
+<dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	FirstName:payload.Identification.FirstName,
+	LastName:payload.Identification.LastName,
+	DOB:payload.Identification.DOB,
+	Gender:payload.Identification.Gender,
+	Title:payload.Identification.Title
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <enricher source="#[sessionVars.input]" target="#[payload]" doc:name="Message Enricher">
+            <db:insert config-ref="MySQL_Configuration" doc:name="IdentificationInsertion">
+                <db:parameterized-query><![CDATA[insert into Identification(FirstName,LastName,DOB,Gender,Title) values
+	(#[payload['FirstName']],
+	#[payload['LastName']],
+	#[payload['DOB']],
+	#[payload['Gender']],
+	#[payload['Title']])]]></db:parameterized-query>
+            </db:insert>
+        </enricher>
+        <set-variable variableName="FirstName" value="#[json:Identification/FirstName]" doc:name="FirstNameVariable"/>
+        <set-variable variableName="LastName" value="#[json:Identification/LastName]" doc:name="LastNameVariable"/>
+        <db:select config-ref="MySQL_Configuration" doc:name="IdSelection">
+            <db:parameterized-query><![CDATA[SELECT identificationId from Identification where FirstName = #[flowVars.FirstName] and LastName= #[flowVars.LastName]]]></db:parameterized-query>
+        </db:select>
+        <set-variable variableName="LastId" value="#[payload[0].identificationId]" doc:name="Variable"/>
+        <set-payload value="#[sessionVars.input]" mimeType="application/json" doc:name="Set Payload"/>
+
+        <foreach collection="#[json:Address]" doc:name="For Each">
+            <logger message="inside for each payload type #[payload]" level="INFO" doc:name="Logger"/>
+            <json:json-to-object-transformer doc:name="JSON to Object"/>
+            <dw:transform-message doc:name="Transform Message">
+                <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	type:payload.type,
+	number:payload.number,
+	street:payload.street,
+	Unit:payload.Unit,
+	City:payload.City,
+	State:payload.State,
+    zipcode:payload.City
+}]]></dw:set-payload>
+            </dw:transform-message>
+            <db:insert config-ref="MySQL_Configuration" doc:name="Database">
+                <db:parameterized-query><![CDATA[insert into Address(type,number,street,Unit,City,State,zipcode,identificationId) values
+	(#[payload['type']],
+	#[payload['number']],
+	#[payload['street']],
+	#[payload['Unit']],
+	#[payload['City']],
+	#[payload['State']],
+	#[payload['zipcode']],
+	#[flowVars['LastId']])]]></db:parameterized-query>
+
+
+            </db:insert>
+        </foreach>
+        <foreach collection="#[json:Communication]" doc:name="For Each">
+            <logger message="inside for each payload type #[payload]" level="INFO" doc:name="Logger"/>
+            <json:json-to-object-transformer doc:name="JSON to Object"/>
+            <dw:transform-message doc:name="Transform Message">
+                <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	type:payload.type,
+	value:payload.value,
+	
+	({preferred:payload.preferred} when (payload.preferred != null or payload.preferred !='') 
+		otherwise {}
+	)
+	
+}]]></dw:set-payload>
+            </dw:transform-message>
+            <db:insert config-ref="MySQL_Configuration" doc:name="Database">
+                <db:parameterized-query><![CDATA[insert into Communication(type,value,preferred,identificationId) values
+	(#[payload['type']],
+	#[payload['value']],
+	#[payload['preferred']],
+	#[flowVars['LastId']])]]></db:parameterized-query>
+            </db:insert>
+
+        </foreach>
+
+        <choice doc:name="Was Contact inserted?">
+            <when expression="#[payload != null]">
+                <set-property propertyName="http.status" value="#[200 ]" doc:name="Location property"/>
+                <set-payload value="{&quot;message&quot;:&quot;Contact created&quot; }" doc:name="Set Payload"/>
+
+
+            </when>
+            <otherwise>
+                <set-property propertyName="http.status" value="#[400]" doc:name="Bad Request"/>
+                <set-payload doc:name="Set Payload" value="{&quot;message&quot;: &quot;Failed to create new Account&quot; }"/>
+            </otherwise>
+        </choice>
+
+    </flow>
+    <flow name="put:/{identificationId}:api-config">
+        <set-property propertyName="Content-Type" value="application/json" doc:name="SetContentType"/>
+        <json:json-to-object-transformer doc:name="JSON to Object"/>
+        <set-session-variable variableName="input" value="#[payload]" doc:name="Session Variable"/>
+        <db:select config-ref="MySQL_Configuration" doc:name="Database">
+            <db:parameterized-query><![CDATA[select identificationId from Identification WHERE identificationId = #[message.inboundProperties["http.uri.params"].identificationId]]]></db:parameterized-query>
+
+            
+        </db:select>
+        <set-variable variableName="identificationId" value="#[payload[0].identificationId]" doc:name="Variable"/>
+        <choice doc:name="DoesContactExsits?">
+            <when expression="#[ payload != empty ]">
+                <set-payload value="#[sessionVars.input]" doc:name="Set Payload"/>
+                <set-variable variableName="FirstName" value="#[json:Identification/FirstName]" doc:name="Variable"/>
+                <set-variable variableName="LastName" value="#[json:Identification/LastName]" doc:name="LastName"/>
+                <set-variable variableName="DOB" value="#[json:Identification/DOB]" doc:name="DOB"/>
+                <set-variable variableName="Gender" value="#[json:Identification/Gender]" doc:name="Gender"/>
+                <set-variable variableName="Title" value="#[json:Identification/Title]" doc:name="Title"/>
+                <dw:transform-message doc:name="IdentificationTransform">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	FirstName:flowVars.FirstName,
+	LastName:flowVars.LastName,
+	DOB:flowVars.DOB,
+	Gender:flowVars.Gender,
+	Title:flowVars.Title
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <db:update config-ref="MySQL_Configuration" doc:name="Update_Identification">
+                    <db:parameterized-query><![CDATA[UPDATE Identification 
+SET FirstName     = #[payload.FirstName],
+	LastName      = #[payload.LastName],
+	DOB           = #[payload.DOB],
+	Gender        = #[payload.Gender],
+	Title         = #[payload.Title]
+WHERE identificationId = #[flowVars.identificationId]]]></db:parameterized-query>
+                </db:update>
+                <set-payload value="#[sessionVars.input]" doc:name="Set Payload"/>
+
+                <foreach collection="#[json:Address]" doc:name="For Each">
+            <logger message="inside for each payload type #[payload]" level="INFO" doc:name="Logger"/>
+            <json:json-to-object-transformer doc:name="JSON to Object"/>
+            <dw:transform-message doc:name="Transform Message">
+                <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	type:payload.type,
+	number:payload.number,
+	street:payload.street,
+	Unit:payload.Unit,
+	City:payload.City,
+	State:payload.State,
+    zipcode:payload.City
+}]]></dw:set-payload>
+            </dw:transform-message>
+            <db:update config-ref="MySQL_Configuration" doc:name="Update_Address">
+                        <db:parameterized-query><![CDATA[UPDATE Address
+SET
+    type          = #[payload.type],
+	number        = #[payload.number],
+	street        = #[payload.street],
+	Unit          = #[payload.Unit],
+	City          = #[payload.City],
+	State         = #[payload.State],
+	zipcode       = #[payload.zipcode]
+WHERE identificationId = #[flowVars.identificationId]]]></db:parameterized-query>
+
+
+            </db:update>
+                 
+        </foreach>
+        
+         <foreach collection="#[json:Communication]" doc:name="For Each">
+            <logger message="inside for each payload type #[payload]" level="INFO" doc:name="Logger"/>
+            <json:json-to-object-transformer doc:name="JSON to Object"/>
+            <dw:transform-message doc:name="Transform Message">
+                <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	type:payload.type,
+	value:payload.value,
+	({preferred:payload.preferred} when (payload.preferred != null or payload.preferred !='') 
+		otherwise {}
+	)
+	
+}]]></dw:set-payload>
+            </dw:transform-message>
+            <db:update config-ref="MySQL_Configuration" doc:name="Database">
+                        <db:parameterized-query><![CDATA[UPDATE Communication SET
+    type          = #[payload.type],
+	value         = #[payload.value],
+	preferred     = #[payload.preferred]
+WHERE identificationId = #[flowVars.identificationId]]]></db:parameterized-query>
+
+
+            </db:update>
+        </foreach>
+                <choice doc:name="DoesContactExits?">
+                    <when expression="#[payload != null]">
+                        <logger message="UPDATE: #[payload] " level="INFO" doc:name="Logger "/>
+                        <dw:transform-message doc:name="Prepare JSON output structure">
+                            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "OK"
+}]]></dw:set-payload>
+                        </dw:transform-message>
+                        <set-property propertyName="http.status" value="#[200]" doc:name="Property"/>
+                    </when>
+                    <otherwise>
+                        <set-property propertyName="http.status" value="#[400]" doc:name="Bad Request"/>
+                        <set-payload value="{ &quot;message&quot;: &quot;Failed to update Contact&quot; }" doc:name="Bad Request"/>
+                    </otherwise>
+                </choice>
+
+                
+            </when>
+            <otherwise>
+                <set-property propertyName="http.status" value="#[404]" doc:name="Resource Not Found"/>
+                <set-payload value="{ &quot;message&quot;: &quot;Resource not found&quot; }" doc:name="Resource Not Found"/>
+            </otherwise>
+        </choice>
+
+    </flow>
+    <flow name="delete:/{identificationId}:api-config">
+
+        <db:select config-ref="MySQL_Configuration" doc:name="SelectContactBasedOnID ">
+            <db:parameterized-query><![CDATA[SELECT identificationId FROM Identification WHERE identificationId = #[message.inboundProperties["http.uri.params"].identificationId]]]></db:parameterized-query>
+
+        </db:select>
+        <choice doc:name="Does The Contact exists">
+            <when expression="#[ payload != empty ]">
+                <db:delete config-ref="MySQL_Configuration" doc:name="Delete Communication">
+                    <db:parameterized-query><![CDATA[DELETE FROM Communication WHERE identificationId = #[message.inboundProperties.'http.uri.params'.identificationId]]]></db:parameterized-query>
+
+                </db:delete>
+                <db:delete config-ref="MySQL_Configuration" doc:name="AddressDeletion">
+                    <db:parameterized-query><![CDATA[DELETE FROM Address WHERE identificationId = #[message.inboundProperties.'http.uri.params'.identificationId]]]></db:parameterized-query>
+                </db:delete>
+                <db:delete config-ref="MySQL_Configuration" doc:name="IdentificationDeletion">
+                    <db:parameterized-query><![CDATA[DELETE FROM Identification WHERE identificationId = #[message.inboundProperties.'http.uri.params'.identificationId]]]></db:parameterized-query>
+                </db:delete>
+                <choice doc:name="Has the Contact been deleted?">
+                    <when expression="#[payload == 1]">
+                        <logger message="UPDATE: #[payload]" level="INFO" doc:name="Log UPDATE"/>
+
+                        <dw:transform-message doc:name="Prepare JSON output structure">
+                            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "OK"
+}]]></dw:set-payload>
+                        </dw:transform-message>
+                    </when>
+                    <otherwise>
+                        <set-property propertyName="http.status" value="#[400]" doc:name="Bad Request"/>
+                        <set-payload value="{ &quot;message&quot;: &quot;Failed to delete Contact&quot; }" doc:name="Bad Request"/>
+                    </otherwise>
+                </choice>
+            </when>
+            <otherwise>
+                <set-property propertyName="http.status" value="#[404]" doc:name="Resource Not Found"/>
+                <set-payload value="{ &quot;message&quot;: &quot;Resource not found&quot; }" doc:name="Resource not found"/>
+            </otherwise>
+        </choice>
+
+    </flow>
+    <apikit:mapping-exception-strategy name="api-apiKitGlobalExceptionMapping">
+        <apikit:mapping statusCode="404">
+            <apikit:exception value="org.mule.module.apikit.exception.NotFoundException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+            <set-payload value="{ &quot;message&quot;: &quot;Resource not found&quot; }" doc:name="Set Payload"/>
+        </apikit:mapping>
+        <apikit:mapping statusCode="405">
+            <apikit:exception value="org.mule.module.apikit.exception.MethodNotAllowedException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+            <set-payload value="{ &quot;message&quot;: &quot;Method not allowed&quot; }" doc:name="Set Payload"/>
+        </apikit:mapping>
+        <apikit:mapping statusCode="415">
+            <apikit:exception value="org.mule.module.apikit.exception.UnsupportedMediaTypeException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+            <set-payload value="{ &quot;message&quot;: &quot;Unsupported media type&quot; }" doc:name="Set Payload"/>
+        </apikit:mapping>
+        <apikit:mapping statusCode="406">
+            <apikit:exception value="org.mule.module.apikit.exception.NotAcceptableException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+            <set-payload value="{ &quot;message&quot;: &quot;Not acceptable&quot; }" doc:name="Set Payload"/>
+        </apikit:mapping>
+        <apikit:mapping statusCode="400">
+            <apikit:exception value="org.mule.module.apikit.exception.BadRequestException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+            <set-payload value="{ &quot;message&quot;: &quot;Bad request&quot; }" doc:name="Set Payload"/>
+        </apikit:mapping>
+    </apikit:mapping-exception-strategy>
+</mule>
